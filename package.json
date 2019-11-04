@@ -1,6 +1,6 @@
 {
     "name": "fres",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "An Extended Framework Based on Express.js",
     "main": "src/app.js",
     "scripts": {
@@ -12,9 +12,8 @@
     },
     "author": "FloatFlower Huang",
     "license": "MIT",
-    "homepage": "https://bitbucket.org/FloatFlower/fresco-web-engine#readme",
+    "homepage": "https://github.com/floatflower/fres",
     "dependencies": {
-        "axios": "^0.19.0",
         "chai": "^4.2.0",
         "chai-http": "^4.3.0",
         "colors": "^1.4.0",
