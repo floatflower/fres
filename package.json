@@ -1,0 +1,33 @@
+{
+    "name": "fres",
+    "version": "1.0.0",
+    "description": "An Extended Framework Based on Express.js",
+    "main": "src/app.js",
+    "scripts": {
+        "db:create": "node bin/db/create.js",
+        "db:drop": "node bin/db/drop.js",
+        "db:migration": "knex migrate:latest",
+        "test": "mocha 'test/{,!(helper)/**}/*.js' --recursive --timeout 15000 --exit",
+        "coverage": "nyc npm run test:core"
+    },
+    "author": "FloatFlower Huang",
+    "license": "MIT",
+    "homepage": "https://bitbucket.org/FloatFlower/fresco-web-engine#readme",
+    "dependencies": {
+        "axios": "^0.19.0",
+        "chai": "^4.2.0",
+        "chai-http": "^4.3.0",
+        "colors": "^1.4.0",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "knex": "^0.19.5",
+        "md5": "^2.2.1",
+        "mocha": "^6.2.2",
+        "moment": "^2.24.0",
+        "nyc": "^14.1.1",
+        "pg": "^7.12.1",
+        "qs": "^6.9.0",
+        "randomstring": "^1.1.5",
+        "urlencode": "^1.1.0"
+    }
+}
