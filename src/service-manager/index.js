@@ -12,9 +12,7 @@ class ServiceManager {
 
     constructor() {
         this.services = new Map();
-        if(process.env.NODE_ENV === 'dev') {
-            this.set('knex', require('knex')(require(`${process.cwd()}/knexfile.js`)[process.env.NODE_ENV]));
-        }
+        this.set('knex', require('knex')(require(`${process.cwd()}/knexfile.js`)[process.env.NODE_ENV]));
         this.set('schema', schema);
         this.set('event-handler.loader', eventHandlerLoader);
         this.set('response.handler', responseHandler);
