@@ -3,8 +3,8 @@ const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const Repository = require('../../src/repository');
-const serviceManager = require('../../src/service-manager');
+const Repository = require('../../repository');
+const serviceManager = require('../../service-manager');
 
 class TestRepository extends Repository
 {

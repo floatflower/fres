@@ -2,9 +2,9 @@ const moment = require('moment');
 const chai = require('chai');
 const assert = chai.assert;
 
-const ResponseHandler = require('../../src/response-handler');
-const ResponseRule = require('../../src/response-rule');
-const ResponseRuleLoader = require('../../src/response-rule-loader');
+const ResponseHandler = require('../../response-handler');
+const ResponseRule = require('../../response-rule');
+const ResponseRuleLoader = require('../../response-rule-loader');
 
 class TestResponseRule extends ResponseRule
 {

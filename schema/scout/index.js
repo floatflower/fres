@@ -1,7 +1,7 @@
 const Table = require('../table');
 const columnFactory = require('../column/factory');
 const schema = require('../index');
-const knex = require('../knex');
+const knex = require('../../knex');
 
 class SchemaScout {
     constructor() {

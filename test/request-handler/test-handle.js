@@ -2,9 +2,9 @@ const moment = require('moment');
 const chai = require('chai');
 const assert = chai.assert;
 
-const requestRuleLoader = require('../../src/request-rule-loader');
-const requestHandler = require('../../src/request-handler');
-const RequestRule = require('../../src/request-rule');
+const requestRuleLoader = require('../../request-rule-loader');
+const requestHandler = require('../../request-handler');
+const RequestRule = require('../../request-rule');
 
 class TestRequestRule extends RequestRule
 {

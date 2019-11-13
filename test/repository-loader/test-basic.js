@@ -4,8 +4,8 @@ const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const serviceManager = require('../../src/service-manager');
-const Repository = require('../../src/repository');
+const serviceManager = require('../../service-manager');
+const Repository = require('../../repository');
 
 describe('Test RepositoryLoader basic()', () => {
 

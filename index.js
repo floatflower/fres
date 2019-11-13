@@ -1,15 +1,18 @@
-const serviceManager = require('./src/service-manager');
+const fs = require('fs');
+const path = require('path');
 
-const EventHandler = require('./src/event-handler');
-const Repository = require('./src/repository');
-const RequestRule = require('./src/request-rule');
-const ResponseRule = require('./src/response-rule');
-const HttpError = require('./src/error/http');
-const RepositoryError = require('./src/error/repository');
-const RequestHandlerError = require('./src/error/request-handler');
-const ResponseHandlerError = require('./src/error/response-handler');
-const schemaScout = require('./src/schema/scout');
-const validation = require('./src/validation');
+const serviceManager = require('./service-manager');
+
+const EventHandler = require('./event-handler');
+const Repository = require('./repository');
+const RequestRule = require('./request-rule');
+const ResponseRule = require('./response-rule');
+const HttpError = require('./error/http');
+const RepositoryError = require('./error/repository');
+const RequestHandlerError = require('./error/request-handler');
+const ResponseHandlerError = require('./error/response-handler');
+const schemaScout = require('./schema/scout');
+const validation = require('./validation');
 
 class Fres {
     constructor() {
@@ -22,7 +25,7 @@ class Fres {
             let filesList = fs.readdirSync(responseRuleDirectory);
             filesList.forEach(file => {
                 if(fs.statSync(`${responseRuleDirectory}/${file}`).isFile()) {
-                    let responseHandlerConstructor = require(`${path}/${file}`);
+                    let responseHandlerConstructor = require(`${responseRuleDirectory}/${file}`);
                     if(validation.isConstructor(responseHandlerConstructor)) {
                         let rootInstance = new responseHandlerConstructor();
                         if(rootInstance instanceof ResponseRule) {
@@ -44,7 +47,7 @@ class Fres {
             let filesList = fs.readdirSync(requestRuleDirectory);
             filesList.forEach(file => {
                 if(fs.statSync(`${requestRuleDirectory}/${file}`).isFile()) {
-                    let requestHandlerConstructor = require(`${path}/${file}`);
+                    let requestHandlerConstructor = require(`${requestRuleDirectory}/${file}`);
                     if(validation.isConstructor(requestHandlerConstructor)) {
                         let rootInstance = new requestHandlerConstructor();
                         if(rootInstance instanceof ResponseRule) {
@@ -66,7 +69,7 @@ class Fres {
             let filesList = fs.readdirSync(eventHandlerDirectory);
             filesList.forEach(file => {
                 if(fs.statSync(`${eventHandlerDirectory}/${file}`).isFile()) {
-                    let eventHandlerConstructor = require(`${path}/${file}`);
+                    let eventHandlerConstructor = require(`${eventHandlerDirectory}/${file}`);
                     if(validation.isConstructor(eventHandlerConstructor)) {
                         let rootInstance = new eventHandlerConstructor();
                         if(rootInstance instanceof ResponseRule) {
@@ -74,6 +77,28 @@ class Fres {
                                 .serviceManager
                                 .get('response.handler')
                                 .set(eventHandlerConstructor);
+                        }
+                    }
+                }
+            });
+            resolve();
+        });
+    }
+
+    initRepositoryLoader() {
+        return new Promise((resolve) => {
+            let repositoryDirectory = `${process.cwd()}/src/repository`;
+            let filesList = fs.readdirSync(repositoryDirectory);
+            filesList.forEach(file => {
+                if(fs.statSync(`${repositoryDirectory}/${file}`).isFile()) {
+                    let repositoryConstructor = require(`${repositoryDirectory}/${file}`);
+                    if(validation.isConstructor(repositoryConstructor)) {
+                        let rootInstance = new repositoryConstructor();
+                        if(rootInstance instanceof Repository) {
+                            this
+                                .serviceManager
+                                .get('response.handler')
+                                .set(repositoryConstructor);
                         }
                     }
                 }

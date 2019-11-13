@@ -11,7 +11,7 @@ app.get('/', (req, res, next) => {
     res.json({connected: true})
 });
 
-const Concurrent = require('../../../src/friend/concurrent');
+const Concurrent = require('../../../friend/concurrent');
 
 describe('Test Repository create()', () => {
 

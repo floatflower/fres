@@ -4,8 +4,8 @@ const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const schemaScout = require('../../src/schema/scout');
-const schema = require('../../src/schema');
+const schemaScout = require('../../schema/scout');
+const schema = require('../../schema');
 
 
 describe('Test SchemaScout peak()', () => {

@@ -1,11 +1,11 @@
-const schemaScout = require('../../src/schema/scout');
+const schemaScout = require('../../schema/scout');
 const moment = require('moment');
 const chai = require('chai');
 const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const Repository = require('../../src/repository');
+const Repository = require('../../repository');
 
 describe('Test Repository count()', () => {
 

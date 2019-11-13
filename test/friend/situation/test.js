@@ -7,7 +7,7 @@ const assert = chai.assert;
 const knexConfig = require('../../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 
-const Situation = require('../../../src/friend/situation');
+const Situation = require('../../../friend/situation');
 let situation = new Situation();
 
 let seeder1 = (knex) => {
