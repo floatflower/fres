@@ -1,5 +1,6 @@
 const repositoryLoader = require('../repository-loader');
 const schema = require('../schema');
+const schemaScout = require('../schema/scout');
 const dataHandler = require('../data-handler');
 const validation = require('../validation');
 const http = require('../http');
@@ -7,12 +8,13 @@ const bus = require('../bus');
 const eventHandlerLoader = require('../event-handler-loader');
 const responseHandler = require('../response-handler');
 const requestHandler = require('../request-handler');
+const knex = require('../knex');
 
 class ServiceManager {
 
     constructor() {
         this.services = new Map();
-        this.set('knex', require('knex')(require(`${process.cwd()}/knexfile.js`)[process.env.NODE_ENV]));
+        this.set('knex', knex);
         this.set('schema', schema);
         this.set('event-handler.loader', eventHandlerLoader);
         this.set('response.handler', responseHandler);

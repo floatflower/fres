@@ -21,7 +21,7 @@ module.exports = {
             directory: './src/migration'
         }
     },
-    prod: {
+    production: {
         client: "pg",
         connection: db_connection,
         pool: { min: 0, max: 100 },

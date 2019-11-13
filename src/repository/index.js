@@ -2,13 +2,13 @@ const validation = require('../validation');
 const dataHandler = require('../data-handler');
 const schema = require('../schema');
 
+
 // TODO: get table columns from schema scout.
 // TODO: rollback when exception occur.
 class Repository
 {
     constructor(tableName, knex = null) {
-        const serviceManager = require('../service-manager');
-        this.knex = (knex === null ? serviceManager.get('knex') : knex);
+        this.knex = require('../knex');
         this.table = tableName;
         //console.log(schema);
     }

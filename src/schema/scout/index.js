@@ -1,7 +1,7 @@
-const serviceManager = require('../../service-manager');
 const Table = require('../table');
 const columnFactory = require('../column/factory');
 const schema = require('../index');
+const knex = require('../knex');
 
 class SchemaScout {
     constructor() {
@@ -9,8 +9,6 @@ class SchemaScout {
 
     peak() {
         return new Promise(resolve => {
-            let knex = serviceManager.get('knex');
-
             return knex('information_schema.tables').select()
                 .where('table_schema', 'public')
                 .then((existedTables) => {
@@ -35,7 +33,6 @@ class SchemaScout {
 
     getColumnsInTable(tableName) {
         return new Promise(resolve => {
-            let knex = serviceManager.get('knex');
             let constraints = new Map();
             knex('information_schema.columns')
                 .select()
