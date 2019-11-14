@@ -7,6 +7,8 @@ const EventHandler = require('./event-handler');
 const Repository = require('./repository');
 const RequestRule = require('./request-rule');
 const ResponseRule = require('./response-rule');
+const requestRuleLoader = require('./request-rule-loader');
+const responseRuleLoader = require('./response-rule-loader');
 const HttpError = require('./error/http');
 const RepositoryError = require('./error/repository');
 const RequestHandlerError = require('./error/request-handler');
@@ -25,14 +27,11 @@ class Fres {
             let filesList = fs.readdirSync(responseRuleDirectory);
             filesList.forEach(file => {
                 if(fs.statSync(`${responseRuleDirectory}/${file}`).isFile()) {
-                    let responseHandlerConstructor = require(`${responseRuleDirectory}/${file}`);
-                    if(validation.isConstructor(responseHandlerConstructor)) {
-                        let rootInstance = new responseHandlerConstructor();
+                    let responseRuleConstructor = require(`${responseRuleDirectory}/${file}`);
+                    if(validation.isConstructor(responseRuleConstructor)) {
+                        let rootInstance = new responseRuleConstructor();
                         if(rootInstance instanceof ResponseRule) {
-                            this
-                                .serviceManager
-                                .get('response.handler')
-                                .set(responseHandlerConstructor);
+                            responseRuleLoader.set(responseRuleConstructor);
                         }
                     }
                 }
@@ -47,14 +46,11 @@ class Fres {
             let filesList = fs.readdirSync(requestRuleDirectory);
             filesList.forEach(file => {
                 if(fs.statSync(`${requestRuleDirectory}/${file}`).isFile()) {
-                    let requestHandlerConstructor = require(`${requestRuleDirectory}/${file}`);
-                    if(validation.isConstructor(requestHandlerConstructor)) {
-                        let rootInstance = new requestHandlerConstructor();
+                    let requestRuleConstructor = require(`${requestRuleDirectory}/${file}`);
+                    if(validation.isConstructor(requestRuleConstructor)) {
+                        let rootInstance = new requestRuleConstructor();
                         if(rootInstance instanceof ResponseRule) {
-                            this
-                                .serviceManager
-                                .get('response.handler')
-                                .set(requestHandlerConstructor);
+                            requestRuleLoader.set(requestRuleConstructor);
                         }
                     }
                 }

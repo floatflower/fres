@@ -6,8 +6,8 @@ const validation = require('../validation');
 const http = require('../http');
 const bus = require('../bus');
 const eventHandlerLoader = require('../event-handler-loader');
-const responseHandler = require('../response-handler');
-const requestHandler = require('../request-handler');
+const responseHandler = require('../response-rule-loader');
+const requestHandler = require('../request-rule-loader');
 const knex = require('../knex');
 
 class ServiceManager {
