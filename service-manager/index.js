@@ -1,6 +1,4 @@
 const repositoryLoader = require('../repository-loader');
-const schema = require('../schema');
-const schemaScout = require('../schema/scout');
 const dataHandler = require('../data-handler');
 const validation = require('../validation');
 const http = require('../http');
@@ -17,7 +15,6 @@ class ServiceManager {
     constructor() {
         this.services = new Map();
         this.set('knex', knex);
-        this.set('schema', schema);
         this.set('event-handler.loader', eventHandlerLoader);
         this.set('response.handler', responseHandler);
         this.set('request.handler', requestHandler);

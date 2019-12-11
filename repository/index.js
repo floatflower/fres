@@ -32,9 +32,9 @@ class Repository
 
             if(rootEntity.isBasicEntity) _criteria = criteria;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _criteria[key] = criteria[key];
-                }
+                Object.keys(criteria).forEach(key => {
+                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
+                })
             }
 
             if(validation.isEmptyObject(_criteria)) {
@@ -55,13 +55,14 @@ class Repository
                 });
 
                 q.then((results) => {
-                    if(results.length === 0) resolve(null);
-
+                    if(results.length === 0) {
+                        resolve(null);
+                        return false;
+                    }
                     let result = results[0];
                     const entity = entityLoader.get(this.table);
                     entity.handleRowData(result);
-                    resolve(result);
-
+                    resolve(entity);
                 }, reject);
             }
         })
@@ -98,11 +99,10 @@ class Repository
 
             if(rootEntity.isBasicEntity) _criteria = criteria;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _criteria[key] = criteria[key];
-                }
+                Object.keys(criteria).forEach(key => {
+                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
+                })
             }
-
 
             let q = this.knex(this.table)
                 .select();
@@ -124,7 +124,7 @@ class Repository
 
             let returnData = [];
             q.then((results) => {
-                if(results.length === 0) return [];
+                if(results.length === 0) resolve([]);
                 for(let i = 0; i < results.length; i++) {
                     const entity = entityLoader.get(this.table);
                     entity.handleRowData(results[i]);
@@ -155,9 +155,9 @@ class Repository
             const rootEntity = entityLoader.get(this.table);
             if(rootEntity.isBasicEntity) _data = data;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _data[key] = data[key];
-                }
+                Object.keys(data).forEach(key => {
+                    if (rootEntity.columns.has(key)) _data[key] = data[key];
+                })
             }
 
             let selfTransaction = (trx === null);
@@ -183,11 +183,11 @@ class Repository
                     // 如果這筆寫入的事務是屬於 self transaction 的型態，在插入動作結束後，就將該事務 commit。
                     if(selfTransaction) return _trx.commit().then(() => {
                         entity.handleRowData(_data);
-                        resolve(_data)
+                        resolve(entity)
                     }, reject);
                     else {
                         entity.handleRowData(_data);
-                        resolve(_data);
+                        resolve(entity);
                     }
                 })
         });
@@ -209,23 +209,23 @@ class Repository
             let _criteria = {};
             if(rootEntity.isBasicEntity) _criteria = criteria;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _criteria[key] = criteria[key];
-                }
+                Object.keys(criteria).forEach(key => {
+                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
+                })
             }
 
             let _data = {};
             if(rootEntity.isBasicEntity) _data = data;
             else {
-                for(let key of rootEntity.columns.keys()) {
+                Object.keys(data).forEach(key => {
                     _data[key] = data[key];
-                }
+                });
             }
 
             if(validation.isEmptyObject(_data)) {
                 process.nextTick(() => {
                     resolve();
-                })
+                });
             } else {
                 let selfTransaction = (trx === null);
                 let _trx = null;
@@ -233,7 +233,6 @@ class Repository
                     if(trx) resolve(trx);
                     else return this.knex.transaction(resolve, reject);
                 });
-
                 transaction
                     .then(generatedTrx => { _trx = generatedTrx })
                     .then(() => this.findBy(_criteria, {}, _trx, 'update'))
@@ -278,9 +277,9 @@ class Repository
             let _criteria = {};
             if(rootEntity.isBasicEntity) _criteria = criteria;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _criteria[key] = criteria[key];
-                }
+                Object.keys(criteria).forEach(key => {
+                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
+                })
             }
 
             let selfTransaction = (trx === null);
@@ -328,9 +327,9 @@ class Repository
             let _criteria = {};
             if(rootEntity.isBasicEntity) _criteria = criteria;
             else {
-                for(let key of rootEntity.columns.keys()) {
-                    _criteria[key] = criteria[key];
-                }
+                Object.keys(criteria).forEach(key => {
+                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
+                })
             }
 
             let q = this.knex(this.table)

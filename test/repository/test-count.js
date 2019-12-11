@@ -1,4 +1,3 @@
-const schemaScout = require('../../schema/scout');
 const moment = require('moment');
 const chai = require('chai');
 const assert = chai.assert;
@@ -6,10 +5,24 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
+const entityLoader = require('../../entity-loader');
+
+const Entity = require('../../entity');
+
+class TestEntity extends Entity {
+    constructor() {
+        super('test_entity');
+        this.addColumn('id', 'integer', false, true, false);
+        this.addColumn('unique', 'string', false, false, true);
+        this.addColumn('duplicated_data', 'string', false, false, false);
+        this.addColumn('create_at', 'datetime', false, false, false);
+    }
+}
 
 describe('Test Repository count()', () => {
 
     beforeEach(() => {
+        entityLoader.set(TestEntity);
         // create table
         return new Promise((resolve, reject) => {
             return knex.schema
@@ -73,7 +86,6 @@ describe('Test Repository count()', () => {
                             },
                         ])
                 })
-                .then(() => schemaScout.peak())
                 .then(resolve, reject);
         });
     });

@@ -5,7 +5,6 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
-const schemaScout = require('../../schema/scout');
 
 describe('Test Repository remove()', () => {
 
@@ -73,7 +72,6 @@ describe('Test Repository remove()', () => {
                             },
                         ])
                 })
-                .then(() => schemaScout.peak())
                 .then(resolve, reject);
         });
     });

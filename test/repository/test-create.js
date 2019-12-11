@@ -5,11 +5,23 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const serviceManager = require('../../service-manager');
-const schemaScout = require('../../schema/scout');
+const entityLoader = require('../../entity-loader');
+const Entity = require('../../entity');
+
+class TestEntity extends Entity {
+    constructor() {
+        super('test_entity');
+        this.addColumn('id', 'integer', false, true, false);
+        this.addColumn('unique_data', 'string', false, false, true);
+        this.addColumn('duplicated_data', 'string', false, false, false);
+        this.addColumn('create_at', 'datetime', false, false, false);
+    }
+}
 
 describe('Test Repository create()', () => {
 
     beforeEach(() => {
+        entityLoader.set(TestEntity);
         // create table
         return new Promise((resolve, reject) => {
             return knex.schema
@@ -73,7 +85,6 @@ describe('Test Repository create()', () => {
                             },
                         ])
                 })
-                .then(() => schemaScout.peak())
                 .then(resolve, reject);
         });
     });
@@ -90,9 +101,9 @@ describe('Test Repository create()', () => {
             duplicated_data: 'duplicated3',
             create_at: moment().format('YYYY-MM-DD HH:mm:ss')
         }).then((createdEntity) => {
-            assert(createdEntity.id === 6, '實體主鍵錯誤。');
-            assert(createdEntity.unique_data === 'unique1000', '插入的資料錯誤。');
-            assert(createdEntity.duplicated_data === 'duplicated3', '插入的資料錯誤。');
+            assert(createdEntity.get('id') === 6, '實體主鍵錯誤。');
+            assert(createdEntity.get('unique_data') === 'unique1000', '插入的資料錯誤。');
+            assert(createdEntity.get('duplicated_data') === 'duplicated3', '插入的資料錯誤。');
             done();
         })
     });
@@ -112,9 +123,9 @@ describe('Test Repository create()', () => {
             })
             .then(trx.commit)
             .then(() => {
-                assert(entity.id === 6, '實體主鍵錯誤。');
-                assert(entity.unique_data === 'unique1000', '插入的資料錯誤。');
-                assert(entity.duplicated_data === 'duplicated3', '插入的資料錯誤。');
+                assert(entity.get('id') === 6, '實體主鍵錯誤。');
+                assert(entity.get('unique_data') === 'unique1000', '插入的資料錯誤。');
+                assert(entity.get('duplicated_data') === 'duplicated3', '插入的資料錯誤。');
                 done();
             })
         })

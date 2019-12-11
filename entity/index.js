@@ -26,7 +26,7 @@ class Entity {
             this.primary = name;
         }
 
-        this.data.set(key, null);
+        this.data.set(name, null);
 
         this.isBasicEntity = false;
         return this;
@@ -37,7 +37,7 @@ class Entity {
     }
 
     set(key, value) {
-        if(!this.isBasicEntity && this.columns.has(key)) {
+        if(this.isBasicEntity || this.columns.has(key)) {
             this.data.set(key, value);
         }
         return this;
