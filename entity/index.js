@@ -56,12 +56,24 @@ class Entity {
         return this;
     }
 
+    async callBeforeUpdate() {
+        for(let i = 0; i < this.beforeUpdate.length; i++) {
+            await (this.beforeUpdate[i])(this);
+        }
+    }
+
     addAfterUpdate(func) {
         if(typeof func === 'function') {
             this.afterUpdate.push(func);
         }
 
         return this;
+    }
+
+    async callAfterUpdate() {
+        for(let i = 0; i < this.afterUpdate.length; i++) {
+            await (this.afterUpdate[i])(this);
+        }
     }
 
     addBeforeCreate(func) {
@@ -72,12 +84,24 @@ class Entity {
         return this;
     }
 
+    async callBeforeCreate() {
+        for(let i = 0; i < this.beforeCreate.length; i++) {
+            await (this.beforeCreate[i])(this);
+        }
+    }
+
     addAfterCreate(func) {
         if(typeof func === 'function') {
             this.afterCreate.push(func);
         }
 
         return this;
+    }
+
+    async callAfterCreate() {
+        for(let i = 0; i < this.afterCreate.length; i++) {
+            await (this.afterCreate[i])(this);
+        }
     }
 
     handleRowData(data) {

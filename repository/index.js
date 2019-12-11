@@ -213,7 +213,6 @@ class Repository
                     if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
                 })
             }
-
             let _data = {};
             if(rootEntity.isBasicEntity) _data = data;
             else {

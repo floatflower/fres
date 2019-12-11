@@ -1,4 +1,13 @@
-const serviceManager = require('../service-manager');
+const knex = require('../knex');
+const repositoryLoader = require('../repository-loader');
+
+let generateTrx = () => {
+    return new Promise(resolve => {
+        return knex.transaction(trx => {
+            resolve(trx);
+        })
+    });
+};
 
 class Action {
     // action:
@@ -27,7 +36,6 @@ class EntityManager {
         else {
             this.actions.push(new Action('update', entity));
         }
-
         return this;
     }
 
@@ -36,32 +44,40 @@ class EntityManager {
     }
 
     async flush() {
-        return new Promise(resolve => {
-            const knex = require('../knex');
+        return new Promise(async resolve => {
+            let error = false;
             return knex.transaction(async trx => {
                 for(let i = 0; i < this.actions.length; i ++) {
-                    let action = this.actions[i];
-                    let entity = action.entity;
-                    if(action.action === 'create') {
+                    if(this.actions[i].action === 'create') {
                         await this
-                            .handleCreateEntity(entity, trx)
-                            .catch(trx.rollback);
-                        break;
+                            .handleCreateEntity(this.actions[i].entity, trx)
+                            .catch(() => {
+                                error = true;
+                            });
                     }
 
-                    else if(action.action === 'update') {
+                    else if(this.actions[i].action === 'update') {
                         await this
-                            .handleUpdateEntity(entity, trx)
-                            .catch(trx.rollback);
-                        break;
+                            .handleUpdateEntity(this.actions[i].entity, trx)
+                            .catch(() => {
+                                error = true;
+                            });
                     }
-                    else if(action.action === 'remove') {
+
+                    else if(this.actions[i].action === 'remove') {
                         await this
-                            .handleRemoveEntity(entity, trx)
-                            .catch(trx.rollback);
-                        break;
+                            .handleRemoveEntity(this.actions[i].entity, trx)
+                            .catch(() => {
+                                error = true;
+                            });
                     }
-                    resolve();
+
+                    if(error) break;
+                }
+                if(!error) {
+                    return trx.commit().then(resolve);
+                } else {
+                    return trx.rollback().then(resolve);
                 }
             })
         })
@@ -69,35 +85,26 @@ class EntityManager {
     }
 
     async handleCreateEntity(entity, trx) {
-        const beforeCreate = entity.beforeCreate;
-        const afterCreate = entity.afterCreate;
-
         return new Promise(async (resolve, reject) => {
-            const repository = serviceManager
-                .get('repository.loader')
+            const repository = repositoryLoader
                 .get(entity.tableName);
 
-            let entityData = {};
-            for(let [key] of entity.columns.keys()) {
-                entityData[key] = entity.get(key)
-            }
+            await entity.callBeforeCreate();
 
-            for(let i = 0; i < beforeCreate.length; i ++) {
-                await (beforeCreate[i])();
+            let entityData = {};
+            for(let key of entity.columns.keys()) {
+                if(key !== entity.primary) entityData[key] = entity.get(key)
             }
 
             const createdEntity = await repository
                 .create(entityData, trx, entity.primary)
                 .catch(reject);
 
-            for(let key of entity.columns.keys()) {
-                if(typeof createdEntity[key] !== 'undefined')
-                    entity.set(key, createdEntity[key])
+            for(let [index, value] of createdEntity.data) {
+                entity.set(index, value);
             }
 
-            for(let i = 0; i < afterCreate.length; i ++) {
-                await (afterCreate[i])();
-            }
+            await entity.callAfterCreate();
 
             resolve(entity)
         });
@@ -108,13 +115,12 @@ class EntityManager {
         const afterUpdate = entity.afterUpdate;
 
         return new Promise(async (resolve, reject) => {
-            const repository = serviceManager
-                .get('repository.loader')
+            const repository = repositoryLoader
                 .get(entity.tableName);
 
             let entityData = {};
-            for(let [key] of entity.columns.keys()) {
-                entityData[key] = entity.get(key)
+            for(let key of entity.columns.keys()) {
+                if(key !== entity.primary) entityData[key] = entity.get(key)
             }
 
             let criteria = {};
@@ -124,7 +130,8 @@ class EntityManager {
                 await (beforeUpdate[i])();
             }
 
-            const updatedEntity = await repository.update(criteria, entityData, trx).catch(reject);
+            await repository.update(criteria, entityData, trx).catch(reject);
+            const updatedEntity = await repository.findOneBy(criteria);
 
             for(let key of entity.columns.keys()) {
                 if(typeof updatedEntity[key] !== 'undefined')
@@ -143,8 +150,7 @@ class EntityManager {
         const beforeRemove = entity.beforeRemove;
         const afterRemove = entity.afterRemove;
         return new Promise(async (resolve, reject) => {
-            const repository = serviceManager
-                .get('repository.loader')
+            const repository = repositoryLoader
                 .get(entity.tableName);
 
             let criteria = {};
