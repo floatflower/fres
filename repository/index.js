@@ -1,38 +1,13 @@
 const validation = require('../validation');
 const dataHandler = require('../data-handler');
-const schema = require('../schema');
+const entityLoader = require('../entity-loader');
 
-
-// TODO: get table columns from schema scout.
 // TODO: rollback when exception occur.
 class Repository
 {
     constructor(tableName, knex = null) {
         this.knex = require('../knex');
         this.table = tableName;
-        //console.log(schema);
-    }
-
-    criteriaFilter(criteria) {
-        let _criteria = {};
-        Object.keys(criteria).forEach(key => {
-            let column = schema.getColumn(this.table, key);
-            if(column !== null) {
-                _criteria[key] = criteria[key];
-            }
-        });
-        return _criteria;
-    }
-
-    dataFilter(data) {
-        let _data = {};
-        Object.keys(data).forEach(d => {
-            let column = schema.getColumn(this.table, d);
-            if(column !== null) {
-                _data[d] = data[d];
-            }
-        });
-        return _data;
     }
 
     /**
@@ -51,7 +26,16 @@ class Repository
      */
     findOneBy(criteria, trx = null, lockMode = 'share') {
         return new Promise((resolve, reject) => {
-            let _criteria = this.criteriaFilter(criteria);
+
+            let _criteria = {};
+            const rootEntity = entityLoader.get(this.table);
+
+            if(rootEntity.isBasicEntity) _criteria = criteria;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _criteria[key] = criteria[key];
+                }
+            }
 
             if(validation.isEmptyObject(_criteria)) {
                 process.nextTick(() => {resolve(null)});
@@ -71,7 +55,13 @@ class Repository
                 });
 
                 q.then((results) => {
-                    resolve(results.length === 0 ? null : results[0])
+                    if(results.length === 0) resolve(null);
+
+                    let result = results[0];
+                    const entity = entityLoader.get(this.table);
+                    entity.handleRowData(result);
+                    resolve(result);
+
                 }, reject);
             }
         })
@@ -79,14 +69,12 @@ class Repository
 
     // Function Alias
     find(id, trx = null, lockMode = 'share') {
-        let tableInfo = schema.getTable(this.table);
-        let primaryColumn = tableInfo.getPrimaryColumn();
-        if(primaryColumn === null) return null;
-        else {
-            let criteria = {};
-            criteria[primaryColumn.name] = id;
-            return this.findOneBy(criteria, trx, lockMode);
-        }
+        const entity = entityLoader.get(this.table);
+        if(entity.primary === null) return null;
+
+        let criteria = {};
+        criteria[entity.primary] = id;
+        return this.findOneBy(criteria, trx, lockMode);
     }
 
     /**c
@@ -104,7 +92,17 @@ class Repository
      */
     findBy(criteria = {}, orderBy = {}, limit = null, offset = null, trx = null, lockMode = 'share') {
         return new Promise((resolve, reject) => {
-            let _criteria = this.criteriaFilter(criteria);
+
+            let _criteria = {};
+            const rootEntity = entityLoader.get(this.table);
+
+            if(rootEntity.isBasicEntity) _criteria = criteria;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _criteria[key] = criteria[key];
+                }
+            }
+
 
             let q = this.knex(this.table)
                 .select();
@@ -124,7 +122,16 @@ class Repository
             if(typeof limit !== 'undefined' && limit !== null) q.limit(dataHandler.integer(limit));
             if(typeof offset !== 'undefined' && offset !== null) q.offset(dataHandler.integer(offset));
 
-            q.then(resolve, reject)
+            let returnData = [];
+            q.then((results) => {
+                if(results.length === 0) return [];
+                for(let i = 0; i < results.length; i++) {
+                    const entity = entityLoader.get(this.table);
+                    entity.handleRowData(results[i]);
+                    returnData.push(entity);
+                }
+                resolve(returnData);
+            }, reject)
         })
     }
 
@@ -143,7 +150,15 @@ class Repository
      */
     create(data, trx = null, returning = 'id') {
         return new Promise((resolve, reject) => {
-            let _data = this.dataFilter(data);
+
+            let _data = {};
+            const rootEntity = entityLoader.get(this.table);
+            if(rootEntity.isBasicEntity) _data = data;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _data[key] = data[key];
+                }
+            }
 
             let selfTransaction = (trx === null);
             let _trx = null;
@@ -164,11 +179,16 @@ class Repository
                 .then((results) => {
                     // 將 returning 取得的值，放入到 data 中。
                     if(typeof returning === 'string') _data[returning] = results[0];
+                    const entity = entityLoader.get(this.table);
                     // 如果這筆寫入的事務是屬於 self transaction 的型態，在插入動作結束後，就將該事務 commit。
                     if(selfTransaction) return _trx.commit().then(() => {
+                        entity.handleRowData(_data);
                         resolve(_data)
                     }, reject);
-                    else resolve(_data);
+                    else {
+                        entity.handleRowData(_data);
+                        resolve(_data);
+                    }
                 })
         });
     }
@@ -185,8 +205,22 @@ class Repository
      */
     update(criteria, data, trx = null) {
         return new Promise((resolve, reject) => {
-            let _criteria = this.criteriaFilter(criteria);
-            let _data = this.dataFilter(data);
+            const rootEntity = entityLoader.get(this.table);
+            let _criteria = {};
+            if(rootEntity.isBasicEntity) _criteria = criteria;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _criteria[key] = criteria[key];
+                }
+            }
+
+            let _data = {};
+            if(rootEntity.isBasicEntity) _data = data;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _data[key] = data[key];
+                }
+            }
 
             if(validation.isEmptyObject(_data)) {
                 process.nextTick(() => {
@@ -219,12 +253,11 @@ class Repository
 
     // Function Alias
     updateWithId(id, data, trx = null) {
-        let tableInfo = schema.getTable(this.table);
-        let primaryColumn = tableInfo.getPrimaryColumn();
-        if(primaryColumn === null) return null;
+        const entity = entityLoader.get(this.table);
+        if(entity.primary === null) return null;
         else {
             let criteria = {};
-            criteria[primaryColumn.name] = id;
+            criteria[entity.primary] = id;
             return this.update(criteria, data, trx);
         }
     }
@@ -241,7 +274,14 @@ class Repository
     remove(criteria, trx = null) {
         return new Promise((resolve, reject) => {
 
-            let _criteria = this.criteriaFilter(criteria);
+            const rootEntity = entityLoader.get(this.table);
+            let _criteria = {};
+            if(rootEntity.isBasicEntity) _criteria = criteria;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _criteria[key] = criteria[key];
+                }
+            }
 
             let selfTransaction = (trx === null);
             let _trx = null;
@@ -267,14 +307,11 @@ class Repository
 
     // Function Alias
     removeWithID(id, trx = null) {
-        let tableInfo = schema.getTable(this.table);
-        let primaryColumn = tableInfo.getPrimaryColumn();
-        if(primaryColumn === null) return null;
-        else {
-            let criteria = {};
-            criteria[primaryColumn.name] = id;
-            return this.remove(criteria, trx);
-        }
+        const entity = entityLoader.get(this.table);
+        if(entity.primary === null) return null;
+        let criteria = {};
+        criteria[entity.primary] = id;
+        return this.remove(criteria, trx);
     }
 
     /**
@@ -286,7 +323,15 @@ class Repository
      */
     count(criteria, trx = null, countKey = 'id') {
         return new Promise((resolve, reject) => {
-            let _criteria = this.criteriaFilter(criteria);
+
+            const rootEntity = entityLoader.get(this.table);
+            let _criteria = {};
+            if(rootEntity.isBasicEntity) _criteria = criteria;
+            else {
+                for(let key of rootEntity.columns.keys()) {
+                    _criteria[key] = criteria[key];
+                }
+            }
 
             let q = this.knex(this.table)
                 .count(`${countKey} as c`);

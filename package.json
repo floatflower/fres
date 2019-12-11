@@ -1,6 +1,6 @@
 {
     "name": "fres",
-    "version": "1.0.3beta-7",
+    "version": "1.0.4beta-3",
     "description": "An Extended Framework Based on Express.js",
     "main": "src/app.js",
     "scripts": {

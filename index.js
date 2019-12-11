@@ -5,6 +5,7 @@ const serviceManager = require('./service-manager');
 
 const EventHandler = require('./event-handler');
 const Repository = require('./repository');
+const Entity = require('./entity');
 const RequestRule = require('./request-rule');
 const ResponseRule = require('./response-rule');
 const requestRuleLoader = require('./request-rule-loader');
@@ -13,7 +14,6 @@ const HttpError = require('./error/http');
 const RepositoryError = require('./error/repository');
 const RequestHandlerError = require('./error/request-handler');
 const ResponseHandlerError = require('./error/response-handler');
-const schemaScout = require('./schema/scout');
 const validation = require('./validation');
 
 class Fres {
@@ -93,7 +93,7 @@ class Fres {
                         if(rootInstance instanceof Repository) {
                             this
                                 .serviceManager
-                                .get('response.handler')
+                                .get('repository.loader')
                                 .set(repositoryConstructor);
                         }
                     }
@@ -103,9 +103,25 @@ class Fres {
         });
     }
 
-    initSchemaScout() {
+    initEntityLoader() {
         return new Promise((resolve, reject) => {
-            schemaScout.peak().then(resolve, reject);
+            let entityDirectory = `${process.cwd()}/src/entity`;
+            let filesList = fs.readdirSync(entityDirectory);
+            filesList.forEach(file => {
+                if(fs.statSync(`${entityDirectory}/${file}`).isFile()) {
+                    let entityConstructor = require(`${entityDirectory}/${file}`);
+                    if(validation.isConstructor(entityConstructor)) {
+                        let rootInstance = new entityConstructor();
+                        if(rootInstance instanceof Entity) {
+                            this
+                                .serviceManager
+                                .get('entity.loader')
+                                .set(entityConstructor);
+                        }
+                    }
+                }
+            });
+            resolve();
         });
     }
 }

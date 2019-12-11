@@ -16,7 +16,8 @@ class RepositoryLoader
         if(validation.isConstructor(con)) {
             const Repository = require('../repository');
             let rootInstance = new con();
-            if(rootInstance instanceof Repository) this.repositories.set(rootInstance.table, con);
+            if(rootInstance instanceof Repository)
+                this.repositories.set(rootInstance.table, con);
         }
     }
 
