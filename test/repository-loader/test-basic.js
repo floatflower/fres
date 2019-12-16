@@ -4,7 +4,7 @@ const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const serviceManager = require('../../service-manager');
+const fres = require('../../index');
 const Repository = require('../../repository');
 
 describe('Test RepositoryLoader basic()', () => {
@@ -32,7 +32,7 @@ describe('Test RepositoryLoader basic()', () => {
     });
 
     it('能夠取得一個基礎的 Repository 實例。', (done) => {
-        let testRepository = serviceManager.get('repository.loader').basic('test');
+        let testRepository = fres.get('repository.loader').basic('test');
         assert(testRepository instanceof Repository, '回傳型態錯誤。');
         done();
     });

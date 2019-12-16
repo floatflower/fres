@@ -4,7 +4,7 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
-const serviceManager = require('../../service-manager');
+const fres = require('../../index');
 
 class TestRepository extends Repository
 {
@@ -38,7 +38,7 @@ describe('Test RepositoryLoader set()', () => {
     });
 
     it('能夠將 Repository 的 constructor 載入 Loader 中。', (done) => {
-        let repositoryLoader = serviceManager.get('repository.loader');
+        let repositoryLoader = fres.get('repository.loader');
         repositoryLoader.set(TestRepository);
         assert(typeof repositoryLoader.repositories.has('test'), '沒有成功插入。');
         assert(typeof repositoryLoader.get('test') === 'object', '插入的型態錯誤。');

@@ -23,7 +23,6 @@ describe('Test Repository count()', () => {
 
     beforeEach(() => {
         tableLoader.set(TestEntityTable);
-        console.log(tableLoader);
         // create table
         return new Promise((resolve, reject) => {
             return knex.schema

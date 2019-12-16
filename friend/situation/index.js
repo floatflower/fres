@@ -6,8 +6,7 @@ class Situation
     }
 
     register(seedFunction) {
-        const serviceManager = require('../../service-manager');
-        const knex = serviceManager.get('knex');
+        const knex = require('../../knex');
         let action = seedFunction(knex);
         this.seeders.push(action);
     }

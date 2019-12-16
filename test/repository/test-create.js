@@ -4,8 +4,9 @@ const assert = chai.assert;
 
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
-const serviceManager = require('../../service-manager');
 const tableLoader = require('../../table-loader');
+
+const fres = require('../../index');
 
 const Table = require('../../table');
 
@@ -95,7 +96,7 @@ describe('Test Repository create()', () => {
     });
 
     it('能夠創建資料', (done) => {
-        let repository = serviceManager.get('repository.loader').basic('test_entity');
+        let repository = fres.get('repository.loader').basic('test_entity');
 
         repository.create({
             unique_data: 'unique1000',
@@ -110,7 +111,7 @@ describe('Test Repository create()', () => {
     });
 
     it('送入trx後，能夠創建資料', (done) => {
-        let repository = serviceManager.get('repository.loader').basic('test_entity');
+        let repository = fres.get('repository.loader').basic('test_entity');
 
         let entity = null;
         knex.transaction(trx => {
