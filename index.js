@@ -18,3 +18,4 @@ exports.EventHandler = require('./event-handler');
 exports.Repository = require('./repository');
 exports.ResponseRule = require('./response-rule');
 exports.HttpError = require('./error/http');
+exports.Table = require('./table');

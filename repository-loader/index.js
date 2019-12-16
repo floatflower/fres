@@ -48,6 +48,5 @@ class RepositoryLoader
 }
 
 const singleton = new RepositoryLoader();
-
-module.exports.RepositoryLoader = RepositoryLoader;
+singleton.init();
 module.exports = singleton;
