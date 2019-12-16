@@ -54,24 +54,4 @@ describe('Test Repository create()', () => {
                 done();
             })
     });
-
-    it('測試可以正常迸發 500 次請求', (done) => {
-        let con = new Concurrent(2000, 500);
-        let count = 0;
-        con.action((index) => {
-            return new Promise((resolve) => {
-                chai.request(app)
-                    .get('/')
-                    .send()
-                    .end((err, res) => {
-                        count ++;
-                        resolve();
-                    })
-            })
-        })
-        .then(() => {
-            assert(2000 === count, '迸發行為失敗。');
-            done();
-        })
-    });
 });
