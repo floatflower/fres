@@ -1,9 +1,29 @@
+const fs = require('fs');
+const Repository = require('../repository');
 const validation = require('../validation');
 
 class RepositoryLoader
 {
     constructor() {
         this.repositories = new Map();
+    }
+
+    init() {
+        let repositoryDirectory = `${process.cwd()}/src/repository`;
+        if(fs.existsSync(repositoryDirectory)) {
+            let filesList = fs.readdirSync(repositoryDirectory);
+            filesList.forEach(file => {
+                if (fs.statSync(`${repositoryDirectory}/${file}`).isFile()) {
+                    let repositoryConstructor = require(`${repositoryDirectory}/${file}`);
+                    if (validation.isConstructor(repositoryConstructor)) {
+                        let rootInstance = new repositoryConstructor();
+                        if (rootInstance instanceof Repository) {
+                            this.set(repositoryConstructor);
+                        }
+                    }
+                }
+            });
+        }
     }
 
     basic(tableName) {

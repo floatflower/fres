@@ -5,10 +5,11 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
-const Entity = require('../../entity');
-const entityLoader = require('../../entity-loader');
+const tableLoader = require('../../table-loader');
 
-class TestEntity extends Entity {
+const Table = require('../../table');
+
+class TestEntityTable extends Table {
     constructor() {
         super('test_entity');
         this.addColumn('id', 'integer', false, true, false);
@@ -23,7 +24,7 @@ describe('Test Repository findOneBy()', () => {
     beforeEach(() => {
         // create table
         return new Promise((resolve, reject) => {
-            entityLoader.set(TestEntity);
+            tableLoader.set(TestEntityTable);
             return knex.schema
                 .createTable('test_entity', (table) => {
 
@@ -108,7 +109,7 @@ describe('Test Repository findOneBy()', () => {
 
         repository.findOneBy({id: 1})
             .then((existedEntity) => {
-                assert(existedEntity.get('id') === 1, '找到的指定資料不符合需求。');
+                assert(existedEntity.id === 1, '找到的指定資料不符合需求。');
                 done();
             })
     });
@@ -144,7 +145,7 @@ describe('Test Repository findOneBy()', () => {
         knex.transaction(trx => {
             repository.findOneBy({id: 1}, trx, 'share')
                 .then((existedEntity) => {
-                    assert(existedEntity.get('id') === 1, '找到的指定資料不符合需求。');
+                    assert(existedEntity.id === 1, '找到的指定資料不符合需求。');
                 })
                 .then(trx.commit)
                 .then(() => {
@@ -189,7 +190,7 @@ describe('Test Repository findOneBy()', () => {
         knex.transaction(trx => {
             repository.findOneBy({id: 1}, trx, 'update')
                 .then((existedEntity) => {
-                    assert(existedEntity.get('id') === 1, '找到的資料超過一筆時應該只回傳一筆。');
+                    assert(existedEntity.id === 1, '找到的資料超過一筆時應該只回傳一筆。');
                 })
                 .then(trx.commit)
                 .then(() => {

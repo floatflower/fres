@@ -1,11 +1,11 @@
 const validation = require('../validation');
 const dataHandler = require('../data-handler');
-const entityLoader = require('../entity-loader');
+const tableLoader = require('../table-loader');
 
 // TODO: rollback when exception occur.
 class Repository
 {
-    constructor(tableName, knex = null) {
+    constructor(tableName) {
         this.knex = require('../knex');
         this.table = tableName;
     }
@@ -27,55 +27,35 @@ class Repository
     findOneBy(criteria, trx = null, lockMode = 'share') {
         return new Promise((resolve, reject) => {
 
-            let _criteria = {};
-            const rootEntity = entityLoader.get(this.table);
-
-            if(rootEntity.isBasicEntity) _criteria = criteria;
-            else {
-                Object.keys(criteria).forEach(key => {
-                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
-                })
-            }
+            let _criteria = criteria;
 
             if(validation.isEmptyObject(_criteria)) {
-                process.nextTick(() => {resolve(null)});
+                resolve(null);
+                return false;
             }
-            else {
-                let q = this.knex(this.table)
-                    .select();
 
-                if(trx !== null) {
-                    q.transacting(trx);
-                    if(lockMode === 'update') q.forUpdate();
-                    else q.forShare();
+            let q = this.knex(this.table)
+                .select();
+
+            if(trx !== null) {
+                q.transacting(trx);
+                if(lockMode === 'update') q.forUpdate();
+                else q.forShare();
+            }
+
+            Object.keys(_criteria).forEach((key) => {
+                q.andWhere(key, _criteria[key]);
+            });
+
+            q.then((results) => {
+                if(results.length === 0) {
+                    resolve(null);
+                    return false;
                 }
-
-                Object.keys(_criteria).forEach((key) => {
-                    q.andWhere(key, _criteria[key]);
-                });
-
-                q.then((results) => {
-                    if(results.length === 0) {
-                        resolve(null);
-                        return false;
-                    }
-                    let result = results[0];
-                    const entity = entityLoader.get(this.table);
-                    entity.handleRowData(result);
-                    resolve(entity);
-                }, reject);
-            }
+                let result = results[0];
+                resolve(result);
+            }, reject);
         })
-    }
-
-    // Function Alias
-    find(id, trx = null, lockMode = 'share') {
-        const entity = entityLoader.get(this.table);
-        if(entity.primary === null) return null;
-
-        let criteria = {};
-        criteria[entity.primary] = id;
-        return this.findOneBy(criteria, trx, lockMode);
     }
 
     /**c
@@ -94,15 +74,7 @@ class Repository
     findBy(criteria = {}, orderBy = {}, limit = null, offset = null, trx = null, lockMode = 'share') {
         return new Promise((resolve, reject) => {
 
-            let _criteria = {};
-            const rootEntity = entityLoader.get(this.table);
-
-            if(rootEntity.isBasicEntity) _criteria = criteria;
-            else {
-                Object.keys(criteria).forEach(key => {
-                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
-                })
-            }
+            let _criteria = criteria;
 
             let q = this.knex(this.table)
                 .select();
@@ -122,16 +94,7 @@ class Repository
             if(typeof limit !== 'undefined' && limit !== null) q.limit(dataHandler.integer(limit));
             if(typeof offset !== 'undefined' && offset !== null) q.offset(dataHandler.integer(offset));
 
-            let returnData = [];
-            q.then((results) => {
-                if(results.length === 0) resolve([]);
-                for(let i = 0; i < results.length; i++) {
-                    const entity = entityLoader.get(this.table);
-                    entity.handleRowData(results[i]);
-                    returnData.push(entity);
-                }
-                resolve(returnData);
-            }, reject)
+            return q.then(resolve, reject)
         })
     }
 
@@ -146,50 +109,24 @@ class Repository
      * 若沒有給定 trx 這個函數將為自動產生一個自主的 trx 並在函數結束前 commit 該 trx。
      * @param data
      * @param trx
-     * @param returning
      */
-    create(data, trx = null, returning = 'id') {
+    create(data, trx = null) {
         return new Promise((resolve, reject) => {
+            let returning = [];
 
-            let _data = {};
-            const rootEntity = entityLoader.get(this.table);
-            if(rootEntity.isBasicEntity) _data = data;
-            else {
-                Object.keys(data).forEach(key => {
-                    if (rootEntity.columns.has(key)) _data[key] = data[key];
-                })
+            const tableDefinition = tableLoader.get(this.table);
+            for(let key of tableDefinition.columns.keys()) {
+                returning.push(key);
             }
 
-            let selfTransaction = (trx === null);
-            let _trx = null;
-            let transaction = new Promise((resolve) => {
-                if(trx) resolve(trx);
-                else return this.knex.transaction(resolve, reject);
-            });
+            let q = this.knex(this.table).insert(data).returning(returning);
+            if(trx) q.transacting(trx);
 
-            transaction
-                .then((generatedTrx) => {
-                    _trx = generatedTrx;
-                })
-                .then(() => {
-                    return typeof returning === 'string' ?
-                        this.knex(this.table).insert(_data).transacting(_trx).returning(returning)
-                        : this.knex(this.table).insert(_data).transacting(_trx);
-                })
-                .then((results) => {
-                    // 將 returning 取得的值，放入到 data 中。
-                    if(typeof returning === 'string') _data[returning] = results[0];
-                    const entity = entityLoader.get(this.table);
-                    // 如果這筆寫入的事務是屬於 self transaction 的型態，在插入動作結束後，就將該事務 commit。
-                    if(selfTransaction) return _trx.commit().then(() => {
-                        entity.handleRowData(_data);
-                        resolve(entity)
-                    }, reject);
-                    else {
-                        entity.handleRowData(_data);
-                        resolve(entity);
-                    }
-                })
+            q.then((results) => {
+                // 將 returning 取得的值，放入到 data 中。
+                resolve(results[0]);
+            }, reject)
+
         });
     }
 
@@ -205,59 +142,23 @@ class Repository
      */
     update(criteria, data, trx = null) {
         return new Promise((resolve, reject) => {
-            const rootEntity = entityLoader.get(this.table);
-            let _criteria = {};
-            if(rootEntity.isBasicEntity) _criteria = criteria;
-            else {
-                Object.keys(criteria).forEach(key => {
-                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
-                })
-            }
-            let _data = {};
-            if(rootEntity.isBasicEntity) _data = data;
-            else {
-                Object.keys(data).forEach(key => {
-                    _data[key] = data[key];
-                });
+
+            let returning = [];
+
+            const tableDefinition = tableLoader.get(this.table);
+            for(let key of tableDefinition.columns.keys()) {
+                returning.push(key);
             }
 
-            if(validation.isEmptyObject(_data)) {
-                process.nextTick(() => {
-                    resolve();
-                });
+            if(validation.isEmptyObject(data)) {
+                return this.findBy(criteria).then(resolve, reject);
             } else {
-                let selfTransaction = (trx === null);
-                let _trx = null;
-                let transaction = new Promise((resolve) => {
-                    if(trx) resolve(trx);
-                    else return this.knex.transaction(resolve, reject);
-                });
-                transaction
-                    .then(generatedTrx => { _trx = generatedTrx })
-                    .then(() => this.findBy(_criteria, {}, _trx, 'update'))
-                    .then(() => {
-                        let q = this.knex(this.table).update(_data).transacting((_trx));
-                        Object.keys(_criteria).forEach(key => q.andWhere(key, _criteria[key]));
-                        return q;
-                    })
-                    .then(() => {
-                        // 如果這筆寫入的事務是屬於 self transaction 的型態，在更新動作結束後，就將該事務 commit。
-                        if(selfTransaction) return _trx.commit().then(resolve, reject);
-                        else resolve();
-                    })
+                let q = this.knex(this.table).update(data).returning(returning);
+                Object.keys(criteria).forEach(key => q.andWhere(key, criteria[key]));
+                if(trx) q.transacting(trx);
+                q.then(resolve, reject);
             }
         });
-    }
-
-    // Function Alias
-    updateWithId(id, data, trx = null) {
-        const entity = entityLoader.get(this.table);
-        if(entity.primary === null) return null;
-        else {
-            let criteria = {};
-            criteria[entity.primary] = id;
-            return this.update(criteria, data, trx);
-        }
     }
 
     /**
@@ -271,45 +172,12 @@ class Repository
      */
     remove(criteria, trx = null) {
         return new Promise((resolve, reject) => {
+            let q = this.knex(this.table);
+            Object.keys(criteria).forEach(key => q.andWhere(key, criteria[key]));
+            if(trx) q.transacting(trx);
 
-            const rootEntity = entityLoader.get(this.table);
-            let _criteria = {};
-            if(rootEntity.isBasicEntity) _criteria = criteria;
-            else {
-                Object.keys(criteria).forEach(key => {
-                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
-                })
-            }
-
-            let selfTransaction = (trx === null);
-            let _trx = null;
-            let transaction = new Promise((resolve) => {
-                if(trx !== null) resolve(trx);
-                else return this.knex.transaction(resolve, reject);
-            });
-
-            transaction
-                .then((generatedTrx) => { _trx = generatedTrx; })
-                .then(() => {
-                    let q = this.knex(this.table);
-                    Object.keys(_criteria).forEach(key => q.andWhere(key, _criteria[key]));
-                    return q.del().transacting(_trx);
-                })
-                .then(() => {
-                    // 如果這筆寫入的事務是屬於 self transaction 的型態，在刪除動作結束後，就將該事務 commit。
-                    if(selfTransaction) return _trx.commit().then(resolve, reject);
-                    else resolve();
-                })
+            return q.del().then(resolve, reject);
         })
-    }
-
-    // Function Alias
-    removeWithID(id, trx = null) {
-        const entity = entityLoader.get(this.table);
-        if(entity.primary === null) return null;
-        let criteria = {};
-        criteria[entity.primary] = id;
-        return this.remove(criteria, trx);
     }
 
     /**
@@ -322,23 +190,13 @@ class Repository
     count(criteria, trx = null, countKey = 'id') {
         return new Promise((resolve, reject) => {
 
-            const rootEntity = entityLoader.get(this.table);
-            let _criteria = {};
-            if(rootEntity.isBasicEntity) _criteria = criteria;
-            else {
-                Object.keys(criteria).forEach(key => {
-                    if(rootEntity.columns.has(key)) _criteria[key] = criteria[key];
-                })
-            }
 
             let q = this.knex(this.table)
                 .count(`${countKey} as c`);
 
-            if(trx !== null) {
-                q.transacting(trx);
-            }
+            if(trx) q.transacting(trx);
 
-            Object.keys(_criteria).forEach(key => q.andWhere(key, _criteria[key]));
+            Object.keys(criteria).forEach(key => q.andWhere(key, criteria[key]));
 
             q.then(result => {
                 resolve(dataHandler.integer(result[0].c));

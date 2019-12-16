@@ -5,10 +5,11 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const serviceManager = require('../../service-manager');
-const entityLoader = require('../../entity-loader');
-const Entity = require('../../entity');
+const tableLoader = require('../../table-loader');
 
-class TestEntity extends Entity {
+const Table = require('../../table');
+
+class TestEntityTable extends Table {
     constructor() {
         super('test_entity');
         this.addColumn('id', 'integer', false, true, false);
@@ -21,7 +22,7 @@ class TestEntity extends Entity {
 describe('Test Repository create()', () => {
 
     beforeEach(() => {
-        entityLoader.set(TestEntity);
+        tableLoader.set(TestEntityTable);
         // create table
         return new Promise((resolve, reject) => {
             return knex.schema
@@ -101,9 +102,9 @@ describe('Test Repository create()', () => {
             duplicated_data: 'duplicated3',
             create_at: moment().format('YYYY-MM-DD HH:mm:ss')
         }).then((createdEntity) => {
-            assert(createdEntity.get('id') === 6, '實體主鍵錯誤。');
-            assert(createdEntity.get('unique_data') === 'unique1000', '插入的資料錯誤。');
-            assert(createdEntity.get('duplicated_data') === 'duplicated3', '插入的資料錯誤。');
+            assert(createdEntity.id === 6, '實體主鍵錯誤。');
+            assert(createdEntity.unique_data === 'unique1000', '插入的資料錯誤。');
+            assert(createdEntity.duplicated_data === 'duplicated3', '插入的資料錯誤。');
             done();
         })
     });
@@ -123,9 +124,9 @@ describe('Test Repository create()', () => {
             })
             .then(trx.commit)
             .then(() => {
-                assert(entity.get('id') === 6, '實體主鍵錯誤。');
-                assert(entity.get('unique_data') === 'unique1000', '插入的資料錯誤。');
-                assert(entity.get('duplicated_data') === 'duplicated3', '插入的資料錯誤。');
+                assert(entity.id === 6, '實體主鍵錯誤。');
+                assert(entity.unique_data === 'unique1000', '插入的資料錯誤。');
+                assert(entity.duplicated_data === 'duplicated3', '插入的資料錯誤。');
                 done();
             })
         })

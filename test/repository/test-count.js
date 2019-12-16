@@ -5,11 +5,11 @@ const assert = chai.assert;
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
-const entityLoader = require('../../entity-loader');
+const tableLoader = require('../../table-loader');
 
-const Entity = require('../../entity');
+const Table = require('../../table');
 
-class TestEntity extends Entity {
+class TestEntityTable extends Table {
     constructor() {
         super('test_entity');
         this.addColumn('id', 'integer', false, true, false);
@@ -22,7 +22,8 @@ class TestEntity extends Entity {
 describe('Test Repository count()', () => {
 
     beforeEach(() => {
-        entityLoader.set(TestEntity);
+        tableLoader.set(TestEntityTable);
+        console.log(tableLoader);
         // create table
         return new Promise((resolve, reject) => {
             return knex.schema

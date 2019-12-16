@@ -2,17 +2,18 @@ const moment = require('moment');
 const chai = require('chai');
 const assert = chai.assert;
 
-const Entity = require('../../entity');
 const knexConfig = require('../../knexfile.js');
 const knex = require('knex')(knexConfig[process.env.NODE_ENV || 'dev']);
 const Repository = require('../../repository');
-const entityLoader = require('../../entity-loader');
+const tableLoader = require('../../table-loader');
 
-class TestEntity extends Entity {
+const Table = require('../../table');
+
+class TestEntityTable extends Table {
     constructor() {
         super('test_entity');
         this.addColumn('id', 'integer', false, true, false);
-        this.addColumn('unique', 'string', false, false, true);
+        this.addColumn('unique_data', 'string', false, false, true);
         this.addColumn('duplicated_data', 'string', false, false, false);
         this.addColumn('create_at', 'datetime', false, false, false);
     }
@@ -20,8 +21,9 @@ class TestEntity extends Entity {
 
 describe('Test Repository findBy()', () => {
     before(() => {
-        entityLoader.set(TestEntity);
+        tableLoader.set(TestEntityTable);
     });
+
     beforeEach(() => {
 
         // create table
@@ -137,9 +139,9 @@ describe('Test Repository findBy()', () => {
             .then((existedEntity) => {
                 assert(Array.isArray(existedEntity), '回傳值應該為陣列。');
                 assert(existedEntity.length === 3, '回傳資料筆數不正確。');
-                assert(existedEntity[0].get('id') === 1, '排序資料錯誤。');
-                assert(existedEntity[1].get('id') === 2, '排序資料錯誤。');
-                assert(existedEntity[2].get('id') === 4, '排序資料錯誤。');
+                assert(existedEntity[0].id === 1, '排序資料錯誤。');
+                assert(existedEntity[1].id === 2, '排序資料錯誤。');
+                assert(existedEntity[2].id === 4, '排序資料錯誤。');
                 done();
             })
     });
@@ -152,8 +154,8 @@ describe('Test Repository findBy()', () => {
             .then((existedEntity) => {
                 assert(Array.isArray(existedEntity), '回傳值應該為陣列。');
                 assert(existedEntity.length === 2, '回傳資料筆數不正確。');
-                assert(existedEntity[0].get('id') === 2, '排序資料錯誤。');
-                assert(existedEntity[1].get('id') === 4, '排序資料錯誤。');
+                assert(existedEntity[0].id === 2, '排序資料錯誤。');
+                assert(existedEntity[1].id === 4, '排序資料錯誤。');
                 done();
             })
     });
@@ -270,8 +272,8 @@ describe('Test Repository findBy()', () => {
             .then((existedEntity) => {
                 assert(Array.isArray(existedEntity), '回傳值應該為陣列。');
                 assert(existedEntity.length === 2, '回傳資料筆數不正確。');
-                assert(existedEntity[0].get('id') === 2, '排序資料錯誤。');
-                assert(existedEntity[1].get('id') === 4, '排序資料錯誤。');
+                assert(existedEntity[0].id === 2, '排序資料錯誤。');
+                assert(existedEntity[1].id === 4, '排序資料錯誤。');
             })
             .then(trx.commit)
             .then(() => {
@@ -392,8 +394,8 @@ describe('Test Repository findBy()', () => {
             .then((existedEntity) => {
                 assert(Array.isArray(existedEntity), '回傳值應該為陣列。');
                 assert(existedEntity.length === 2, '回傳資料筆數不正確。');
-                assert(existedEntity[0].get('id') === 2, '排序資料錯誤。');
-                assert(existedEntity[1].get('id') === 4, '排序資料錯誤。');
+                assert(existedEntity[0].id === 2, '排序資料錯誤。');
+                assert(existedEntity[1].id === 4, '排序資料錯誤。');
             })
             .then(trx.commit)
             .then(() => {

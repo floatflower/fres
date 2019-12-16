@@ -6,6 +6,7 @@ class ResponseHandler {
         this.name = name;
     }
 
+
     handle(rules, data) {
         let _rules = [];
         if(typeof rules === 'string') _rules.push(rules);
